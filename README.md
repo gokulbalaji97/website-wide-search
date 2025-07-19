@@ -1,61 +1,139 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Website-Wide Search Application
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This is a backend-focused application built with Laravel that provides a powerful, unified search system across multiple content types. It leverages Laravel Scout with MeiliSearch for fast, relevant, and typo-tolerant search results, with background processing handled by Redis queues.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### ## Key Features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+* **Unified Search API:** A single `/api/search` endpoint to search across Blog Posts, Products, Pages, and FAQs.
+* **High-Performance Indexing:** Uses **Laravel Scout** with the **MeiliSearch** engine for sub-second search performance.
+* **Asynchronous Processing:** Leverages **Laravel Queues** (with Redis) to handle search indexing in the background, ensuring fast API response times for write operations.
+* **Robust Admin Functionality:** Includes secure, admin-only endpoints for viewing search analytics and manually rebuilding the search index.(Just a simple Prototype, Not a fully blown Auth)
+* **Containerized Environment:** The entire application stack is containerized using **Laravel Sail** (Docker), ensuring consistent and easy setup.
+* **Clean API Design:** Follows RESTful principles with API Resources for consistent responses and middleware for route protection.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+### ## Tech Stack
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+* **Backend:** PHP 8.4, Laravel 12
+* **Database:** MySQL
+* **Search Engine:** MeiliSearch
+* **Queue & Cache:** Redis
+* **Development Environment:** Docker (Laravel Sail)
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+---
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### ## Setup and Installation
 
-## Laravel Sponsors
+This project is fully containerized. You only need Docker installed on your machine.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+1.  **Clone the Repository**
+    ```bash
+    git clone https://github.com/gokulbalaji97/website-wide-search.git
+    cd website-wide-search
+    ```
 
-### Premium Partners
+2.  **Create Environment File**
+    Copy the example environment file.
+    ```bash
+    cp .env.example .env
+    ```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+3.  **Start the Docker Containers**
+    This command will build and start the PHP, Nginx, MySQL, Redis, and MeiliSearch containers.
+    ```bash
+    ./vendor/bin/sail up -d
+    ```
 
-## Contributing
+4.  **Install Dependencies**
+    Install the PHP composer dependencies.
+    ```bash
+    sail composer install
+    ```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+5.  **Generate Application Key**
+    ```bash
+    sail artisan key:generate
+    ```
 
-## Code of Conduct
+6.  **Run Database Migrations and Seeders**
+    This will create the database schema and populate it with sample data.
+    ```bash
+    sail artisan migrate --seed
+    ```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+7.  **Build the Search Index**
+    This command will run the initial import of all seeded data into MeiliSearch.
+    ```bash
+    sail artisan search:rebuild-index
+    ```
 
-## Security Vulnerabilities
+The application is now running and accessible at `http://localhost`.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+### ## Running Tests
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+The project includes a full feature test suite written with **Pest**. The tests cover the API endpoints for success cases, validation, and admin-only security.
+
+To run the entire test suite, execute the following command:
+
+```bash
+sail artisan test
+```
+
+---
+
+### ## Indexing & Search Strategy
+
+The architecture was designed for performance, accuracy, and long-term maintainability.
+
+#### 1. Core Technology Choices
+* **Laravel Scout:** Chosen as the core component to abstract the search implementation. This allows the application to be agnostic about the search engine, meaning we could swap MeiliSearch for another engine like Algolia in the future with minimal code changes.
+* **MeiliSearch:** Selected as the search engine for its out-of-the-box speed and, most importantly, its built-in support for **typo-tolerant and prefix search** ("fuzzy matching"). This directly fulfills a key project requirement without needing complex manual configuration. Its seamless integration with Laravel Sail makes for a simple setup.
+
+#### 2. The Asynchronous Indexing Workflow
+The primary strategic decision was to make all indexing operations **asynchronous**.
+* **Problem:** When a user creates or updates a record (e.g., a blog post), synchronously sending that data to MeiliSearch can add hundreds of milliseconds to the API response time, leading to a poor user experience.
+* **Solution:** By setting `SCOUT_QUEUE=true` in the `.env` file, all indexing jobs are pushed to a **Redis queue**. The application immediately returns a success response to the user, and a separate queue worker process handles the communication with MeiliSearch in the background. This ensures the application remains highly responsive and scalable.
+
+#### 3. Data Control and Relevance
+* **Selective Indexing:** We don't just dump entire database records into the search index. The `toSearchableArray()` method in each model is used to precisely define **what** data should be searchable. This prevents irrelevant data (like internal flags or timestamps) from polluting search results and keeps the index lean and fast.
+* **Unified Search Logic:** The `/api/search` endpoint queries each searchable model individually via Scout. The results, already ranked by relevance by MeiliSearch, are then merged. This logic is encapsulated in the `SearchController`, and the final output is standardized using a `SearchResultResource` to ensure a consistent API response regardless of the data source.
+
+#### 4. Maintenance and Reliability
+* **Manual Rebuild Command:** The `search:rebuild-index` Artisan command was created as a powerful administrative tool. It's essential for the initial data import and serves as a recovery mechanism to completely resynchronize the search index with the database if needed.
+* **Scheduled Sync:** The daily scheduled task that runs this command acts as a self-healing safety net, ensuring long-term data consistency and correcting any potential discrepancies that might have occurred.
+
+---
+
+### ## Background Processes
+
+#### Queue Worker
+
+To process indexing jobs in the background, run the queue worker:
+```bash
+sail artisan queue:work
+```
+
+#### Task Scheduling
+
+A nightly task is scheduled to rebuild the search index. In Laravel 12, this is defined in `routes/console.php`. On a production server, the following cron entry would be added to execute it:
+```cron
+* * * * * cd /var/www/html/ && php artisan schedule:run >> /dev/null 2>&1
+```
+
+---
+
+### ## API Endpoints
+
+The sample `ADMIN_SECRET_TOKEN` is set in the `.env.example` file. For admin routes, send this token in the `X-Admin-Token` header.
+
+| Method | Endpoint                    | Description                                                  | Notes                                         |
+| :----- | :---------------------------- | :----------------------------------------------------------- | :-------------------------------------------- |
+| `GET`  | `/api/search`                 | Performs a unified search across all content.                | Query param: `q=...`                          |
+| `GET`  | `/api/search/suggestions`     | Gets a lightweight list of search suggestions.               | Query param: `q=...`                          |
+| `GET`  | `/api/search/logs`            | **Admin-only.** Returns the top 10 most frequent search terms. | Requires `X-Admin-Token` header.              |
+| `POST` | `/api/search/rebuild-index`   | **Admin-only.** Triggers a full rebuild of the search index. | Requires `X-Admin-Token` header. Action is queued. |
